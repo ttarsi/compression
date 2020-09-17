@@ -16,16 +16,27 @@ def bitgen(x):
             yield int((c & (0x80>>i)) != 0)
 
 
-def adaptive_encode(byts, n_bits):
+def adaptive_encode(byts, n_bits, padding=-1):
     '''
-    decoding would need to start from the same dict...
-    much more efficient than storing weights or prob dist
+    decoding needs to start from the same dict (simple because ours
+    assumes 50/50 prob which is intuitive) and n_bits value (so the decoder
+    can build the same frequency table over as it works through bits...
+    much more efficient than storing weights or prob dist,
+    which is used by huffman, simple arithmetic encoding, neural
+    networks for compression, etc.
+
+    if returning encoding, need to keep track of upper and lower bounds for
+    encoding value. Starts [0,1), then is updated based on the probability
+    of the next bit. Idea is that larger probabilites represent larger ranges
+    which require fewer bits to store. Diagram on wikipedia link shows
+    this clearly. Decimal then converted to base 2 representation
+
     '''
     # start with 50/50 for each context
     freq = defaultdict(lambda: [1,2])
 
     # initialize context, entropy
-    prev = [-1]*n_bits
+    prev = [padding]*n_bits
     H = 0.
     bg = bitgen(byts)
 
@@ -46,6 +57,7 @@ def adaptive_encode(byts, n_bits):
         freq[prev_n][1] += 1
     
         prev.append(b)
+
 
     return H / 8
 
