@@ -1,14 +1,4 @@
-# Compression/encoding -- hutter prize
-# start with 1GB data
-
-# smaller sample for tests
-# * enwik9: 1e9 bytes
-# * enwik8: 1e8 bytes
-# ...
-# * enwik6: 1e6 bytes
-#  -- benchmark gzip : 350 KB
-#  -- huffman        : 617 KB -_-
-
+#!/usr/bin/env python3
 from collections import defaultdict
 from queue import PriorityQueue
 from bitstring import BitArray
@@ -104,11 +94,13 @@ class HuffmanCoding:
         else:
             raise ValueError
 
-        
-initial_text = open("enwik6", 'r').read()
 
-hc = HuffmanCoding(initial_text)
-encoding = hc.encode("enwik6encoded")
-encode_decode = hc.decode("enwik6encoded")
-
-assert(initial_text == encode_decode)
+if __name__=="__main__":
+    initial_text = open("enwik6", 'r').read()
+    
+    hc = HuffmanCoding(initial_text)
+    encoding = hc.encode("enwik6encoded")
+    encode_decode = hc.decode("enwik6encoded")
+    
+    assert(initial_text == encode_decode)
+    print("success")
