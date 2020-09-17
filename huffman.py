@@ -6,7 +6,8 @@
 # * enwik8: 1e8 bytes
 # ...
 # * enwik6: 1e6 bytes
-#  -- benchmark: gzip 350 KB
+#  -- benchmark gzip : 350 KB
+#  -- huffman        : 617 KB -_-
 
 from collections import defaultdict
 from queue import PriorityQueue
@@ -38,59 +39,76 @@ class Leaf(Node):
         self.char = char
         self.freq = freq
 
-enwik6 = open("enwik6", 'r').read()
 
-d = defaultdict(int)
-q = PriorityQueue()
+class HuffmanCoding:
+    def __init__(self, text):
+        # initialize important fields
+        self.text = text
+        self.pq = PriorityQueue()
+        self.frequencies = defaultdict(int)
+        self.encodings = defaultdict()
+        self.decodings = dict()
 
-for char in enwik6:
-    d[char] += 1
+    def encode(self, outfile):
+        # calculate frequencies
+        for char in self.text:
+            self.frequencies[char] += 1
 
-for k, v in d.items():
-    q.put(Leaf(k, v))
+        # construct huffman tree
+        for k, v in self.frequencies.items():
+            self.pq.put(Leaf(k, v))
+        for i in range(self.pq.qsize() - 1):
+            min1 = self.pq.get()
+            min2 = self.pq.get()
+            new_node = Branch(min1, min2)
+            self.pq.put(new_node)
 
-for i in range(q.qsize() - 1):
-    a = q.get()
-    b = q.get()
-    new_node = Branch(a, b)
-    q.put(new_node)
+        tree = self.pq.get()
 
-tree = q.get()
+        # put encodings into a dict for each char, and flip for decodings
+        self._get_encodings(tree)
+        self.decodings = {str(v.bin): k for k, v in self.encodings.items()}
 
-encodings = defaultdict()
+        # generate output bit array
+        bits_out = BitArray(bin="")
+        for char in self.text:
+            bits_out.append(self.encodings[char])
 
-def get_encodings(node, word=""):
-    if isinstance(node, Branch):
-        get_encodings(node.left, word + "0")
-        get_encodings(node.right, word + "1")
-    elif isinstance(node, Leaf):
-        encodings[node.char] = BitArray(bin=word)
-    else:
-        raise ValueError
+        with open(outfile, 'wb') as f:
+            bits_out.tofile(f)
 
-get_encodings(tree)
+        return bits_out
 
-bits_out = BitArray(bin="")
-for char in enwik6:
-    bits_out.append(encodings[char])
+    def decode(self, infile):
+        bits_in = BitArray(open(infile, 'rb').read()).bin
+        output, current_code = "", ""
+ 
+        # because these are prefix codes, we can look through bit array
+        # and append the bits until we get a character 
+        for bit in bits_in:
+            current_code += bit
+            if current_code in self.decodings:
+                char = self.decodings[current_code]
+                output += char
+                current_code = ""
 
-with open("enwik6encoded", 'wb') as f:
-    bits_out.tofile(f)
+        return output
+        
+    def _get_encodings(self, node, word=''):
+        # method to create encoding dict
+        if isinstance(node, Branch):
+            self._get_encodings(node.left, word + "0")
+            self._get_encodings(node.right, word + "1")
+        elif isinstance(node, Leaf):
+            self.encodings[node.char] = BitArray(bin=word)
+        else:
+            raise ValueError
 
-bits_in = BitArray(open("enwik6encoded", 'rb').read()).bin
+        
+initial_text = open("enwik6", 'r').read()
 
-unencodings = {str(v.bin): k for k, v in encodings.items()}
+hc = HuffmanCoding(initial_text)
+encoding = hc.encode("enwik6encoded")
+encode_decode = hc.decode("enwik6encoded")
 
-output = ""
-current_code = ""
-for bit in bits_in:
-    current_code += bit
-    if current_code in unencodings:
-        char = unencodings[current_code]
-        output += char
-        current_code = ""
-
-assert(enwik6 == output)
-
-open("enwik6unencoded", 'w').write(output)
-
+assert(initial_text == encode_decode)
