@@ -2,7 +2,7 @@
 
 '''
 Adaptive binary arithmetic coding
-
+https://en.wikipedia.org/wiki/Arithmetic_coding
 '''
 
 from collections import defaultdict
@@ -36,6 +36,7 @@ def adaptive_encode(byts, n_bits):
         p_1 = freq[prev_n][0] / freq[prev_n][1]
         p_b = p_1 if b == 1 else 1.0 - p_1
     
+        # so, we can encode this bit with -log2(p_b) bits
         h_i = -log2(p_b)
         H += h_i
 
@@ -53,5 +54,5 @@ if __name__=="__main__":
     enwik4 = open("enwik4", 'rb').read()
     print(f"initial size: {sys.getsizeof(enwik4)} bytes")
 
-    for n in [4,8,16,32]:
+    for n in [2**n for n in range(6)]:
         print(f"adaptive encoding with {n} bit history: {adaptive_encode(enwik4, n):.5} bytes")
