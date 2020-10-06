@@ -25,7 +25,7 @@ class Branch(Node):
 
 class Leaf(Node):
     def __init__(self, char, freq):
-        super(Branch).__init__()
+        super(Leaf).__init__()
         self.char = char
         self.freq = freq
 
@@ -47,7 +47,7 @@ class HuffmanCoding:
         # construct huffman tree
         for k, v in self.frequencies.items():
             self.pq.put(Leaf(k, v))
-        for i in range(self.pq.qsize() - 1):
+        for _ in range(self.pq.qsize() - 1):
             min1 = self.pq.get()
             min2 = self.pq.get()
             new_node = Branch(min1, min2)

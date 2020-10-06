@@ -58,7 +58,6 @@ def adaptive_encode(byts, n_bits, padding=-1):
     
         prev.append(b)
 
-
     return H / 8
 
 
